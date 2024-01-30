@@ -52,14 +52,23 @@ const CsvPlotter = () => {
   const [summary, setSummary] = useState({
     Max_Temperature_Board: 0, //Maximale Innentemperatur
     Min_Temperature_Board: 0, //Minimale Innentemperatur
+    Avg_Temperature_Board: 0, //Durchscnittliche Innentemperatur
+    SD_Temperature_Board: 0, //Durchscnittliche Innentemperatur
     Max_Temperature_Ext_MS8607: 0, //Maximale Außentemperatur
     Min_Temperature_Ext_MS8607: 0, //Minimale Außentemperatur
+    Avg_Temperature_Ext_MS8607: 0, //Durchscnittliche Außentemperatur
+    SD_Temperature_Ext_MS8607: 0, //Durchscnittliche Außentemperatur
     Max_GNSS_Altitude_above_Mean_Sea_Level: 0, //Maximale Höhe über Meeresspiegel
     Max_GNSS_Ground_speed: 0, //Maximale Geschwindigkeit
     Min_Pressure_Ext_MS8607: 0, //Minimaler Druck
     Max_Pressure_Ext_MS8607: 0, //Maximaler Druck
+    Avg_Pressure_Ext_MS8607: 0, //Durchscnittlicher Druck
+    SD_Pressure_Ext_MS8607: 0, //Durchscnittlicher Druck
     Max_Humidity_Ext_MS8607: 0, //Maximale Luftfeuchtigkeit
     Min_Humidity_Ext_MS8607: 0, //Minimale Luftfeuchtigkeit
+    Avg_Humidity_Ext_MS8607: 0, //Durchscnittliche Luftfeuchtigkeit
+    SD_Humidity_Ext_MS8607: 0, //Durchscnittliche Luftfeuchtigkeit
+    Max_Light_Intensity_UVA_index: 0, //Maximaler UV Index
   });
 
   const handleFileUpload = (event) => {
@@ -228,19 +237,103 @@ const CsvPlotter = () => {
         const V_Humidity_Ext_MS8607 = Humidity_Ext_MS8607.filter(
           (value) => typeof value === 'number' && !isNaN(value)
         );
+        const V_Light_Intensity_UVA_index = Light_Intensity_UVA_index.filter(
+          (value) => typeof value === 'number' && !isNaN(value)
+        );
+
+        const Avg_Temperature_Board =
+          Math.round(
+            (V_Temperature_Board.reduce((a, b) => a + b) /
+              V_Temperature_Board.length) *
+              100
+          ) / 100;
+
+        const Avg_Temperature_Ext_MS8607 =
+          Math.round(
+            (V_Temperature_Ext_MS8607.reduce((a, b) => a + b) /
+              V_Temperature_Ext_MS8607.length) *
+              100
+          ) / 100;
+
+        const Avg_Pressure_Ext_MS8607 =
+          Math.round(
+            (V_Pressure_Ext_MS8607.reduce((a, b) => a + b) /
+              V_Pressure_Ext_MS8607.length) *
+              100
+          ) / 100;
+
+        const Avg_Humidity_Ext_MS8607 =
+          Math.round(
+            (V_Humidity_Ext_MS8607.reduce((a, b) => a + b) /
+              V_Humidity_Ext_MS8607.length) *
+              100
+          ) / 100;
+
         setSummary({
           Max_Temperature_Board: Math.max(...V_Temperature_Board),
           Min_Temperature_Board: Math.min(...V_Temperature_Board),
+          Avg_Temperature_Board,
+          SD_Temperature_Board:
+            Math.round(
+              Math.sqrt(
+                V_Temperature_Board.reduce(
+                  (acc, value) =>
+                    acc + Math.pow(value - Avg_Temperature_Board, 2),
+                  0
+                ) / V_Temperature_Board.length
+              ) * 100
+            ) / 100,
+
           Max_Temperature_Ext_MS8607: Math.max(...V_Temperature_Ext_MS8607),
           Min_Temperature_Ext_MS8607: Math.min(...V_Temperature_Ext_MS8607),
+          Avg_Temperature_Ext_MS8607,
+          SD_Temperature_Ext_MS8607:
+            Math.round(
+              Math.sqrt(
+                V_Temperature_Ext_MS8607.reduce(
+                  (acc, value) =>
+                    acc + Math.pow(value - Avg_Temperature_Ext_MS8607, 2),
+                  0
+                ) / V_Temperature_Ext_MS8607.length
+              ) * 100
+            ) / 100,
+
           Max_GNSS_Altitude_above_Mean_Sea_Level: Math.max(
             ...V_GNSS_Altitude_above_Mean_Sea_Level
           ),
+
           Max_GNSS_Ground_speed: Math.max(...V_GNSS_Ground_speed),
+
           Max_Pressure_Ext_MS8607: Math.max(...V_Pressure_Ext_MS8607),
           Min_Pressure_Ext_MS8607: Math.min(...V_Pressure_Ext_MS8607),
+          Avg_Pressure_Ext_MS8607,
+          SD_Pressure_Ext_MS8607:
+            Math.round(
+              Math.sqrt(
+                V_Pressure_Ext_MS8607.reduce(
+                  (acc, value) =>
+                    acc + Math.pow(value - Avg_Pressure_Ext_MS8607, 2),
+                  0
+                ) / V_Pressure_Ext_MS8607.length
+              ) * 100
+            ) / 100,
+
           Max_Humidity_Ext_MS8607: Math.max(...V_Humidity_Ext_MS8607),
           Min_Humidity_Ext_MS8607: Math.min(...V_Humidity_Ext_MS8607),
+          Avg_Humidity_Ext_MS8607,
+          SD_Humidity_Ext_MS8607:
+            Math.round(
+              Math.sqrt(
+                V_Humidity_Ext_MS8607.reduce(
+                  (acc, value) =>
+                    acc + Math.pow(value - Avg_Humidity_Ext_MS8607, 2),
+                  0
+                ) / V_Humidity_Ext_MS8607.length
+              ) * 100
+            ) / 100,
+          Max_Light_Intensity_UVA_index: Math.max(
+            ...V_Light_Intensity_UVA_index
+          ),
         });
       },
       error: (error) => {
@@ -285,13 +378,15 @@ const CsvPlotter = () => {
       ? csvData.Pressure_Ext_MS8607
       : null;
 
-  const yAxisTitle1 = {
+  const yAxisTitle = {
     title: {
       text:
         yAxis === 'Temperature'
           ? 'Innentemperatur [C]'
           : yAxis === 'Height'
           ? 'Höhe [m]'
+          : yAxis === 'Voltage'
+          ? 'Volt [V]'
           : yAxis === 'Speed'
           ? 'Geschwindigkeit [km/h]'
           : yAxis === 'Pressure'
@@ -303,22 +398,14 @@ const CsvPlotter = () => {
           : null,
     },
   };
-  const yAxisTitle2 = {
-    title: {
-      text:
-        yAxis === 'Temperature'
-          ? 'Außentemperatur [C]'
-          : yAxis === 'Speed'
-          ? 'Steiggeschwindigkeit [km/h]'
-          : null,
-    },
-  };
 
   const yAxisValue1 =
     yAxis === 'Temperature'
       ? csvData.Temperature_Board
       : yAxis === 'Height'
       ? csvData.GNSS_Altitude_above_Mean_Sea_Level
+      : yAxis === 'Voltage'
+      ? csvData.Volt_Supply_Voltage
       : yAxis === 'Speed'
       ? csvData.GNSS_Ground_speed
       : yAxis === 'Pressure'
@@ -331,134 +418,248 @@ const CsvPlotter = () => {
   const yAxisValue2 =
     yAxis === 'Temperature'
       ? csvData.Temperature_Ext_MS8607
-      : yAxis === 'Height'
-      ? csvData.GNSS_Altitude_above_Mean_Sea_Level
       : yAxis === 'Speed'
       ? csvData.Vertical_Speed
+      : null;
+
+  const graphLabel1 =
+    yAxis === 'Temperature'
+      ? 'Innentemperatur [C]'
+      : yAxis === 'Height'
+      ? 'Höhe [m]'
+      : yAxis === 'Voltage'
+      ? 'Spannung [V]'
+      : yAxis === 'Speed'
+      ? 'Geschwindigkeit [km/h]'
       : yAxis === 'Pressure'
-      ? csvData.Pressure_Ext_MS8607
+      ? 'Druck [hPa]'
       : yAxis === 'Humidity'
-      ? csvData.Humidity_Ext_MS8607
+      ? 'Luftfeuchtigkeit [%]'
       : yAxis === 'Light'
-      ? csvData.Light_Intensity_UVA_index
+      ? 'UV Index'
+      : null;
+  const graphLabel2 =
+    yAxis === 'Temperature'
+      ? 'Außentemperatur [C]'
+      : yAxis === 'Speed'
+      ? 'Geschwindigkeit [km/h]'
       : null;
 
   return (
     <div>
-      <input type='file' onChange={handleFileUpload} />
-
-      {csvData.Uptime.length > 0 && (
-        <div className='flex justify-around'>
-          <div className='bg-gray-100 rounded-2xl mt-20 justify-center px-8 py-4'>
-            <p className='text-2xl font-bold mb-4'>Zusammenfassung</p>
-            <p>Minimale Innentemperatur: {summary.Min_Temperature_Board} [C]</p>
-            <p>Maximale Innentemperatur: {summary.Max_Temperature_Board} [C]</p>
-
-            <p>
-              Minimale Außentemperatur: {summary.Min_Temperature_Ext_MS8607} [C]
-            </p>
-            <p className='mb-4'>
-              Maximale Außentemperatur: {summary.Max_Temperature_Ext_MS8607} [C]
-            </p>
-            <p>
-              Maximale Höhe (Meeresspiegel):{' '}
-              {summary.Max_GNSS_Altitude_above_Mean_Sea_Level} [m]
-            </p>
-            <p className='mb-4'>
-              Maximale Geschwindigkeit: {summary.Max_GNSS_Ground_speed} [km/h]
-            </p>
-            <p>Maximaler Druck: {summary.Max_Pressure_Ext_MS8607} [hPa]</p>
-            <p className='mb-4'>
-              Minimaler Druck: {summary.Min_Pressure_Ext_MS8607} [hPa]
-            </p>
-
-            <p>
-              Maximale Luftfeuchtigkeit: {summary.Max_Humidity_Ext_MS8607} [%]
-            </p>
-            <p className='mb-4'>
-              Minimale Luftfeuchtigkeit: {summary.Min_Humidity_Ext_MS8607} [%]
-            </p>
-          </div>
-          <div className='flex flex-col justify-start'>
-            <Plot
-              data={[
-                {
-                  x: xAxisValue,
-                  y: yAxisValue1,
-                  type: 'scatter',
-                  mode: 'lines',
-                  name: yAxisTitle1,
-                },
-                {
-                  x: xAxisValue,
-                  y: yAxisValue2,
-                  type: 'scatter',
-                  mode: 'lines',
-                  name: yAxisTitle2,
-                },
-              ]}
-              layout={{
-                width: 1000,
-                height: 500,
-                title: 'Wetterbalon Daten',
-                xaxis: xAxisTitle,
-                yaxis: {
-                  title: {
-                    text: 'Temperatur [°C]',
-                  },
-                },
-              }}
-            />
-            <div className='flex gap-4'>
-              <span>y-Achse: </span>
-              <Checkbox
-                label='Temperatur'
-                value={yAxis === 'Temperature'}
-                onChange={() => handleChangeY('Temperature')}
-              />
-              <Checkbox
-                label='Höhe'
-                value={yAxis === 'Height'}
-                onChange={() => handleChangeY('Height')}
-              />
-              <Checkbox
-                label='Geschwindigkeit'
-                value={yAxis === 'Speed'}
-                onChange={() => handleChangeY('Speed')}
-              />
-              <Checkbox
-                label='Druck'
-                value={yAxis === 'Pressure'}
-                onChange={() => handleChangeY('Pressure')}
-              />
-              <Checkbox
-                label='Luftfeuchtigkeit'
-                value={yAxis === 'Humidity'}
-                onChange={() => handleChangeY('Humidity')}
-              />
-              <Checkbox
-                label='Lichtintensität'
-                value={yAxis === 'Light'}
-                onChange={() => handleChangeY('Light')}
-              />
+      {!csvData.Uptime.length > 0 ? (
+        <input type='file' onChange={handleFileUpload} />
+      ) : (
+        <div className=''>
+          <div className='flex justify-between px-20'>
+            <div className='bg-gray-100 rounded-2xl mt-20  justify-center px-8 py-4'>
+              <p className='text-2xl font-bold mb-4'>Zusammenfassung</p>
+              <p>
+                Minimale Innentemperatur: {summary.Min_Temperature_Board} [C]
+              </p>
+              <p>
+                Maximale Innentemperatur: {summary.Max_Temperature_Board} [C]
+              </p>
+              <p>
+                Minimale Außentemperatur: {summary.Min_Temperature_Ext_MS8607}{' '}
+                [C]
+              </p>
+              <p className='mb-4'>
+                Maximale Außentemperatur: {summary.Max_Temperature_Ext_MS8607}{' '}
+                [C]
+              </p>
+              <p>
+                Maximale Höhe (Meeresspiegel):{' '}
+                {summary.Max_GNSS_Altitude_above_Mean_Sea_Level} [m]
+              </p>
+              <p className='mb-4'>
+                Maximale Geschwindigkeit: {summary.Max_GNSS_Ground_speed} [km/h]
+              </p>
+              <p>Maximaler Druck: {summary.Max_Pressure_Ext_MS8607} [hPa]</p>
+              <p className='mb-4'>
+                Minimaler Druck: {summary.Min_Pressure_Ext_MS8607} [hPa]
+              </p>
+              <p>
+                Maximale Luftfeuchtigkeit: {summary.Max_Humidity_Ext_MS8607} [%]
+              </p>
+              <p className='mb-4'>
+                Minimale Luftfeuchtigkeit: {summary.Min_Humidity_Ext_MS8607} [%]
+              </p>
             </div>
-            <div className='flex gap-4'>
-              <span>x-Achse: </span>
-              <Checkbox
-                label='Zeit'
-                value={xAxis === 'Uptime'}
-                onChange={() => handleChangeX('Uptime')}
+            <div className='flex flex-col justify-start'>
+              <Plot
+                data={
+                  yAxis === 'Temperature' || yAxis === 'Speed'
+                    ? [
+                        {
+                          x: xAxisValue,
+                          y: yAxisValue1,
+                          type: 'scatter',
+                          mode: 'lines',
+                          name: graphLabel1,
+                          showlegend: true,
+                        },
+                        {
+                          x: xAxisValue,
+                          y: yAxisValue2,
+                          type: 'scatter',
+                          mode: 'lines',
+                          name: graphLabel2,
+                          showlegend: true,
+                        },
+                      ]
+                    : [
+                        {
+                          x: xAxisValue,
+                          y: yAxisValue1,
+                          type: 'scatter',
+                          mode: 'lines',
+                          name: graphLabel1,
+                          showlegend: true,
+                        },
+                      ]
+                }
+                layout={{
+                  width: 1000,
+                  height: 500,
+                  title: 'Wetterbalon Daten',
+                  xaxis: xAxisTitle,
+                  yaxis: yAxisTitle,
+                }}
               />
-              <Checkbox
-                label='Höhe'
-                value={xAxis === 'Height'}
-                onChange={() => handleChangeX('Height')}
-              />{' '}
-              <Checkbox
-                label='Druck'
-                value={xAxis === 'Pressure'}
-                onChange={() => handleChangeX('Pressure')}
-              />
+              <div className='flex gap-4'>
+                <span>y-Achse: </span>
+                <Checkbox
+                  label='Temperatur'
+                  value={yAxis === 'Temperature'}
+                  onChange={() => handleChangeY('Temperature')}
+                />
+                <Checkbox
+                  label='Höhe'
+                  value={yAxis === 'Height'}
+                  onChange={() => handleChangeY('Height')}
+                />
+                <Checkbox
+                  label='Geschwindigkeit'
+                  value={yAxis === 'Speed'}
+                  onChange={() => handleChangeY('Speed')}
+                />
+                <Checkbox
+                  label='Druck'
+                  value={yAxis === 'Pressure'}
+                  onChange={() => handleChangeY('Pressure')}
+                />
+                <Checkbox
+                  label='Luftfeuchtigkeit'
+                  value={yAxis === 'Humidity'}
+                  onChange={() => handleChangeY('Humidity')}
+                />
+                <Checkbox
+                  label='UV Index'
+                  value={yAxis === 'Light'}
+                  onChange={() => handleChangeY('Light')}
+                />
+                <Checkbox
+                  label='Spannung'
+                  value={yAxis === 'Voltage'}
+                  onChange={() => handleChangeY('Voltage')}
+                />
+              </div>
+              <div className='flex gap-4'>
+                <span>x-Achse: </span>
+                <Checkbox
+                  label='Zeit'
+                  value={xAxis === 'Uptime'}
+                  onChange={() => handleChangeX('Uptime')}
+                />
+                <Checkbox
+                  label='Höhe'
+                  value={xAxis === 'Height'}
+                  onChange={() => handleChangeX('Height')}
+                />{' '}
+                <Checkbox
+                  label='Druck'
+                  value={xAxis === 'Pressure'}
+                  onChange={() => handleChangeX('Pressure')}
+                />
+              </div>
+            </div>
+          </div>
+          <div className='bg-gray-100 mt-20  justify-center px-20 py-4'>
+            <p className='text-2xl font-bold mb-4'>Fortgeschrittene Analyse</p>
+            <div className='grid grid-cols-4'>
+              <div>
+                <p>
+                  Minimale Innentemperatur: {summary.Min_Temperature_Board} [C]
+                </p>
+                <p>
+                  Maximale Innentemperatur: {summary.Max_Temperature_Board} [C]
+                </p>
+                <p>
+                  Durchschnittliche Innentemperatur:{' '}
+                  {summary.Avg_Temperature_Board} [C]
+                </p>
+                <p className='mb-12'>
+                  Standardabweichung Innentemperatur:{' '}
+                  {summary.SD_Temperature_Board} [C]
+                </p>
+              </div>
+              <div>
+                <p>
+                  Minimale Außentemperatur: {summary.Min_Temperature_Ext_MS8607}{' '}
+                  [C]
+                </p>
+                <p>
+                  Maximale Außentemperatur: {summary.Max_Temperature_Ext_MS8607}{' '}
+                  [C]
+                </p>
+                <p>
+                  Durchschnittliche Außentemperatur:{' '}
+                  {summary.Avg_Temperature_Ext_MS8607} [C]
+                </p>
+                <p className='mb-12'>
+                  Standardabweichung Außentemperatur:{' '}
+                  {summary.SD_Temperature_Ext_MS8607} [C]
+                </p>
+              </div>
+              <div>
+                <p>Maximaler Druck: {summary.Max_Pressure_Ext_MS8607} [hPa]</p>
+                <p>Minimaler Druck: {summary.Min_Pressure_Ext_MS8607} [hPa]</p>
+                <p>
+                  Durchschnittlicher Druck: {summary.Avg_Pressure_Ext_MS8607}{' '}
+                  [hPa]
+                </p>
+                <p className='mb-12'>
+                  Standardabweichung Druck: {summary.SD_Pressure_Ext_MS8607}{' '}
+                  [hPa]
+                </p>
+              </div>
+              <div>
+                <p>
+                  Maximale Luftfeuchtigkeit: {summary.Max_Humidity_Ext_MS8607}{' '}
+                  [%]
+                </p>
+                <p>
+                  Minimale Luftfeuchtigkeit: {summary.Min_Humidity_Ext_MS8607}{' '}
+                  [%]
+                </p>
+                <p>
+                  Durchschnittliche Luftfeuchtigkeit:{' '}
+                  {summary.Avg_Humidity_Ext_MS8607} [%]
+                </p>
+                <p className='mb-12'>
+                  Standardabweichung Luftfeuchtigkeit:{' '}
+                  {summary.SD_Humidity_Ext_MS8607} [%]
+                </p>
+              </div>
+              <p>
+                Maximale Höhe (Meeresspiegel):{' '}
+                {summary.Max_GNSS_Altitude_above_Mean_Sea_Level} [m]
+              </p>
+              <p>
+                Maximale Geschwindigkeit: {summary.Max_GNSS_Ground_speed} [km/h]
+              </p>
+              <p>Maximaler UV Index: {summary.Max_Light_Intensity_UVA_index}</p>
             </div>
           </div>
         </div>
@@ -470,7 +671,12 @@ const CsvPlotter = () => {
 const Checkbox = ({ label, value, onChange }) => {
   return (
     <label>
-      <input type='checkbox' checked={value} onChange={onChange} />
+      <input
+        type='checkbox'
+        className='mr-2'
+        checked={value}
+        onChange={onChange}
+      />
       {label}
     </label>
   );
