@@ -1,0 +1,39 @@
+Time;Temperature;Speed
+1;1;10
+2;2;10
+3;4;10
+4;8;12
+5;16;15
+
+
+Uptime [s];
+GNSS: PPS Timestamp [s];
+GNSS: UTC date time (ISO 8601);
+GNSS: Fix type (0=no fix, others=fix);
+GNSS: Latitude [degrees];
+GNSS: Longitude [degrees];
+GNSS: Positional dilution of precision;
+GNSS: Altitude [m] (above Mean Sea Level);
+GNSS: Ground speed [km/h];
+GNSS: Satellites in view;
+GNSS: Altitude [m] (above ellipsoid);
+Temperature: Board [degC];
+Temperature: Ext LM75 1 [degC];
+Temperature: Ext MS8607 1 [degC];
+Pressure: Ext MS8607 [hPa];
+Humidity: Ext MS8607 [%];
+Light Intensity: UVA index [];
+Volt: Supply Voltage [V];
+Volt: 3.3V board voltage [V];
+Volt: 5V board voltage [V];
+Volt: Vin1 voltage [V];
+Volt: Vin2 voltage [V];
+Volt: Vin3 voltage [V];
+IO: In 1 State;
+IO: In 1 Timestamp [s];
+IO: In 2 State;
+IO: In 2 Timestamp [s];
+IO: Out 1 State;
+IO: Out 1 Timestamp [s];
+IO: Out 2 State;
+IO: Out 2 Timestamp [s]
