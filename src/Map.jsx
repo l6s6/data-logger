@@ -1,10 +1,11 @@
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-gpx';
 
 import React from 'react';
 
 export default function Map() {
-  const center = [49.3145722, 8.4352064]; // Koordinaten für das Zentrum der Karte in Deutschland
+  const center = [49.3145722, 8.4352064];
   return (
     <div className='flex justify-center'>
       <MapContainer
