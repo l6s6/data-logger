@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Papa from 'papaparse';
 import Plot from 'react-plotly.js';
+import GPXGenerator from './GPX_Generator';
+//TODO: responsive
 
 const CsvPlotter = () => {
   const [yAxis, setYAxis] = React.useState('Temperature');
@@ -662,12 +664,17 @@ const CsvPlotter = () => {
               <p>Maximaler UV Index: {summary.Max_Light_Intensity_UVA_index}</p>
             </div>
           </div>
+
+          <GPXGenerator
+            lat={csvData.GNSS_Latitude}
+            lon={csvData.GNSS_Longitude}
+            height={csvData.GNSS_Altitude_above_Mean_Sea_Level}
+          />
         </div>
       )}
     </div>
   );
 };
-
 const Checkbox = ({ label, value, onChange }) => {
   return (
     <label>
