@@ -14,7 +14,7 @@ root.render(
       <iframe
         width='800'
         height='500'
-        src='/map.html'
+        src='/demo.html'
         title='Map with GPX track'
       ></iframe>
     </div>

@@ -16,7 +16,7 @@ const CsvPlotter = () => {
     setXAxis(newValue);
   };
 
-  const [smoothness, setSmoothness] = React.useState(10);
+  const [smoothness, setSmoothness] = React.useState(25);
   const handleChangeSmoothness = (value) => {
     setSmoothness(value);
   };
@@ -581,105 +581,106 @@ const CsvPlotter = () => {
               }}
             />
             {/* Ende der Box für die Graphen rechts*/}
-
-            {/* Beginn der Reihen für die Checkboxen*/}
-            <div className='flex gap-4'>
-              <span>y-Achse: </span>
-              <Checkbox
-                label='Temperatur'
-                value={yAxis === 'Temperature'}
-                onChange={() => handleChangeY('Temperature')}
-              />
-              <Checkbox
-                label='Höhe'
-                value={yAxis === 'Height'}
-                onChange={() => handleChangeY('Height')}
-              />
-              <Checkbox
-                label='Geschwindigkeit'
-                value={yAxis === 'Speed'}
-                onChange={() => handleChangeY('Speed')}
-              />
-              <Checkbox
-                label='Steiggeschwindigkeit'
-                value={yAxis === 'Vertical'}
-                onChange={() => handleChangeY('Vertical')}
-              />
-              <Checkbox
-                label='Druck'
-                value={yAxis === 'Pressure'}
-                onChange={() => handleChangeY('Pressure')}
-              />
-              <Checkbox
-                label='Luftfeuchtigkeit'
-                value={yAxis === 'Humidity'}
-                onChange={() => handleChangeY('Humidity')}
-              />
-              <Checkbox
-                label='UV Index'
-                value={yAxis === 'Light'}
-                onChange={() => handleChangeY('Light')}
-              />
-              <Checkbox
-                label='Spannung'
-                value={yAxis === 'Voltage'}
-                onChange={() => handleChangeY('Voltage')}
-              />
-            </div>
-            <div className='flex gap-4'>
-              <span>x-Achse: </span>
-              <Checkbox
-                label='Zeit'
-                value={xAxis === 'Uptime'}
-                onChange={() => handleChangeX('Uptime')}
-              />
-              <Checkbox
-                label='Höhe'
-                value={xAxis === 'Height'}
-                onChange={() => handleChangeX('Height')}
-              />{' '}
-              <Checkbox
-                label='Druck'
-                value={xAxis === 'Pressure'}
-                onChange={() => handleChangeX('Pressure')}
-              />
-            </div>
-            <div className='flex gap-4'>
-              <span>Datenglättung: </span>
-              <Checkbox
-                label='1'
-                value={smoothness === 1}
-                onChange={() => handleChangeSmoothness(1)}
-              />
-              <Checkbox
-                label='5'
-                value={smoothness === 5}
-                onChange={() => handleChangeSmoothness(5)}
-              />
-              <Checkbox
-                label='10'
-                value={smoothness === 10}
-                onChange={() => handleChangeSmoothness(10)}
-              />
-              <Checkbox
-                label='25'
-                value={smoothness === 25}
-                onChange={() => handleChangeSmoothness(25)}
-              />
-              <Checkbox
-                label='50'
-                value={smoothness === 50}
-                onChange={() => handleChangeSmoothness(50)}
-              />
-              <Checkbox
-                label='100'
-                value={smoothness === 100}
-                onChange={() => handleChangeSmoothness(100)}
-              />
-            </div>
-            {/* Ende der Reihen für die Checkboxen*/}
           </div>
         </div>
+        {/* Beginn der Reihen für die Checkboxen*/}
+        <div className='px-20'>
+          <div className='flex gap-4'>
+            <span>y-Achse: </span>
+            <Checkbox
+              label='Temperatur'
+              value={yAxis === 'Temperature'}
+              onChange={() => handleChangeY('Temperature')}
+            />
+            <Checkbox
+              label='Höhe'
+              value={yAxis === 'Height'}
+              onChange={() => handleChangeY('Height')}
+            />
+            <Checkbox
+              label='Geschwindigkeit'
+              value={yAxis === 'Speed'}
+              onChange={() => handleChangeY('Speed')}
+            />
+            <Checkbox
+              label='Steiggeschwindigkeit'
+              value={yAxis === 'Vertical'}
+              onChange={() => handleChangeY('Vertical')}
+            />
+            <Checkbox
+              label='Druck'
+              value={yAxis === 'Pressure'}
+              onChange={() => handleChangeY('Pressure')}
+            />
+            <Checkbox
+              label='Luftfeuchtigkeit'
+              value={yAxis === 'Humidity'}
+              onChange={() => handleChangeY('Humidity')}
+            />
+            <Checkbox
+              label='UV Index'
+              value={yAxis === 'Light'}
+              onChange={() => handleChangeY('Light')}
+            />
+            <Checkbox
+              label='Spannung'
+              value={yAxis === 'Voltage'}
+              onChange={() => handleChangeY('Voltage')}
+            />
+          </div>
+          <div className='flex gap-4'>
+            <span>x-Achse: </span>
+            <Checkbox
+              label='Zeit'
+              value={xAxis === 'Uptime'}
+              onChange={() => handleChangeX('Uptime')}
+            />
+            <Checkbox
+              label='Höhe'
+              value={xAxis === 'Height'}
+              onChange={() => handleChangeX('Height')}
+            />{' '}
+            <Checkbox
+              label='Druck'
+              value={xAxis === 'Pressure'}
+              onChange={() => handleChangeX('Pressure')}
+            />
+          </div>
+          <div className='flex gap-4'>
+            <span>Datenglättung: </span>
+            <Checkbox
+              label='1'
+              value={smoothness === 1}
+              onChange={() => handleChangeSmoothness(1)}
+            />
+            <Checkbox
+              label='5'
+              value={smoothness === 5}
+              onChange={() => handleChangeSmoothness(5)}
+            />
+            <Checkbox
+              label='10'
+              value={smoothness === 10}
+              onChange={() => handleChangeSmoothness(10)}
+            />
+            <Checkbox
+              label='25'
+              value={smoothness === 25}
+              onChange={() => handleChangeSmoothness(25)}
+            />
+            <Checkbox
+              label='50'
+              value={smoothness === 50}
+              onChange={() => handleChangeSmoothness(50)}
+            />
+            <Checkbox
+              label='100'
+              value={smoothness === 100}
+              onChange={() => handleChangeSmoothness(100)}
+            />
+          </div>
+        </div>
+        {/* Ende der Reihen für die Checkboxen*/}
         <div className='bg-gray-100 mt-20  justify-center px-20 py-4'>
           <p className='text-2xl font-bold mb-4'>Fortgeschrittene Analyse</p>
           <div className='grid grid-cols-4'>
