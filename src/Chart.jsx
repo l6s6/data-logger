@@ -16,7 +16,10 @@ const CsvPlotter = () => {
     setXAxis(newValue);
   };
 
-
+  const [smoothness, setSmoothness] = React.useState(10);
+  const handleChangeSmoothness = (value) => {
+    setSmoothness(value);
+  };
 
   //Liste aller Daten, die von Sensor aufgezeichnet wurden
   const [csvData, setCsvData] = useState({
@@ -79,8 +82,6 @@ const CsvPlotter = () => {
     Voltage_Difference: 0, //Änderung der Spannung von Anfang zu Ende
   });
 
-
-
   //Funktion wird einmal beim Starten der Seite ausgeführt
   useEffect(() => {
     //Funktion, die die CSV Daten einliest und in den Arrays speichert
@@ -106,7 +107,7 @@ const CsvPlotter = () => {
 
         //was passieren soll, wenn Daten erfolgreich geparsed wurde
         complete: (result) => {
-          //Speichern aller Daten in den Arrays
+          //Speichern aller Daten in den
           const Uptime = result.data.map((row) => row['Uptime [s]']);
           const GNSS_PPS_Timestamp = result.data.map(
             (row) => row['GNSS: PPS Timestamp [s]']
@@ -205,7 +206,6 @@ const CsvPlotter = () => {
           const convertSecondsToMinutes = (seconds) => seconds / 60;
           const Uptime_Min = Uptime.map(convertSecondsToMinutes);
 
-
           //Daten in Arrays speichern
           setCsvData({
             Uptime,
@@ -242,10 +242,6 @@ const CsvPlotter = () => {
             IO_Out_2_State,
             IO_Out_2_Timestamp,
           });
-
-
-
-
 
           //Bereinigte Arrays, die nur Zahlen enthalten
           const V_Temperature_Board = Temperature_Board.filter(
@@ -299,7 +295,6 @@ const CsvPlotter = () => {
                 V_Humidity_Ext_MS8607.length) *
                 100
             ) / 100;
-
 
           //Werte für die Zusammenfassung speichern
           setSummary({
@@ -367,7 +362,7 @@ const CsvPlotter = () => {
             Max_Light_Intensity_UVA_index: Math.max(
               ...V_Light_Intensity_UVA_index
             ),
-          });
+          }); // Funktion zum Mitteln und Durchschnitt bilden
         },
 
         //Fehler Nachricht
@@ -379,8 +374,6 @@ const CsvPlotter = () => {
 
     fetchData();
   }, []);
-
-
 
   //Steiggeschwindigkeit berechnen
   const calculateVelocity = (heightData, timeData) => {
@@ -396,7 +389,6 @@ const CsvPlotter = () => {
 
     return velocityData;
   };
-
 
   //X-Achsen Beschriftung je nach Checkbox
   const xAxisTitle = {
@@ -422,7 +414,6 @@ const CsvPlotter = () => {
       ? csvData.Pressure_Ext_MS8607
       : null;
 
-
   //Y-Achsen Beschriftung je nach Checkbox
   const yAxisTitle = {
     title: {
@@ -434,7 +425,7 @@ const CsvPlotter = () => {
           : yAxis === 'Voltage'
           ? 'Volt [V]'
           : yAxis === 'Speed'
-              ? 'Geschwindigkeit [km/h]'
+          ? 'Geschwindigkeit [km/h]'
           : yAxis === 'Vertical'
           ? 'Steiggeschwindigkeit [km/h]'
           : yAxis === 'Pressure'
@@ -446,7 +437,6 @@ const CsvPlotter = () => {
           : null,
     },
   };
-
 
   //Y-Achsen Werte je nach Checkbox
   const yAxisValue1 =
@@ -470,9 +460,7 @@ const CsvPlotter = () => {
 
   //Y-Achsen Werte je nach Checkbox für zweiten Graphen (Falls nötig)
   const yAxisValue2 =
-    yAxis === 'Temperature'
-      ? csvData.Temperature_Ext_MS8607
-      : null;
+    yAxis === 'Temperature' ? csvData.Temperature_Ext_MS8607 : null;
 
   //Labes des ersten Graphen für die Legende
   const graphLabel1 =
@@ -495,18 +483,27 @@ const CsvPlotter = () => {
       : null;
 
   //Labes des zweiten Graphen für die Legende
-  const graphLabel2 =
-    yAxis === 'Temperature'
-      ? 'Außentemperatur [C]'
-      : null;
+  const graphLabel2 = yAxis === 'Temperature' ? 'Außentemperatur [C]' : null;
 
+  const lineConfig = { shape: 'spline', smoothing: 100 };
 
-  //Beginn HTML    
+  const smoothArray = (arr, groupSize) => {
+    const result = [];
+
+    for (let i = 0; i < arr.length; i += groupSize) {
+      const group = arr.slice(i, i + groupSize);
+      const average =
+        group.reduce((sum, value) => sum + value, 0) / group.length;
+      result.push(average);
+    }
+
+    return result;
+  };
+  //Beginn HTML
   return (
     <div>
       <div className=''>
         <div className='flex justify-between px-20'>
-
           {/* Beginn der Box für die Zusammenfassung links*/}
           <div className='bg-gray-100 rounded-2xl mt-20 min-w-[365px] max-w-[365px] min-h-[400px] max-h-[400px] justify-center flex flex-col px-8 py-4'>
             <p className='text-2xl font-bold mb-4'>Zusammenfassung</p>
@@ -538,7 +535,6 @@ const CsvPlotter = () => {
           </div>
           {/* Ende der Box für die Zusammenfassung links*/}
 
-
           {/* Beginn der Box für die Graphen rechts*/}
           <div className='flex flex-col justify-start'>
             <Plot
@@ -546,28 +542,31 @@ const CsvPlotter = () => {
                 yAxis === 'Temperature'
                   ? [
                       {
-                        x: xAxisValue,
-                        y: yAxisValue1,
+                        x: smoothArray(xAxisValue, smoothness),
+                        y: smoothArray(yAxisValue1, smoothness),
                         type: 'scatter',
                         mode: 'lines',
+                        line: lineConfig,
                         name: graphLabel1,
                         showlegend: true,
                       },
                       {
-                        x: xAxisValue,
-                        y: yAxisValue2,
+                        x: smoothArray(xAxisValue, smoothness),
+                        y: smoothArray(yAxisValue2, smoothness),
                         type: 'scatter',
                         mode: 'lines',
+                        line: lineConfig,
                         name: graphLabel2,
                         showlegend: true,
                       },
                     ]
                   : [
                       {
-                        x: xAxisValue,
-                        y: yAxisValue1,
+                        x: smoothArray(xAxisValue, smoothness),
+                        y: smoothArray(yAxisValue1, smoothness),
                         type: 'scatter',
                         mode: 'lines',
+                        line: lineConfig,
                         name: graphLabel1,
                         showlegend: true,
                       },
@@ -581,10 +580,9 @@ const CsvPlotter = () => {
                 yaxis: yAxisTitle,
               }}
             />
-          {/* Ende der Box für die Graphen rechts*/}
+            {/* Ende der Box für die Graphen rechts*/}
 
-          
-          {/* Beginn der Reihen für die Checkboxen*/}
+            {/* Beginn der Reihen für die Checkboxen*/}
             <div className='flex gap-4'>
               <span>y-Achse: </span>
               <Checkbox
@@ -601,7 +599,8 @@ const CsvPlotter = () => {
                 label='Geschwindigkeit'
                 value={yAxis === 'Speed'}
                 onChange={() => handleChangeY('Speed')}
-              /><Checkbox
+              />
+              <Checkbox
                 label='Steiggeschwindigkeit'
                 value={yAxis === 'Vertical'}
                 onChange={() => handleChangeY('Vertical')}
@@ -645,8 +644,40 @@ const CsvPlotter = () => {
                 onChange={() => handleChangeX('Pressure')}
               />
             </div>
+            <div className='flex gap-4'>
+              <span>Datenglättung: </span>
+              <Checkbox
+                label='1'
+                value={smoothness === 1}
+                onChange={() => handleChangeSmoothness(1)}
+              />
+              <Checkbox
+                label='5'
+                value={smoothness === 5}
+                onChange={() => handleChangeSmoothness(5)}
+              />
+              <Checkbox
+                label='10'
+                value={smoothness === 10}
+                onChange={() => handleChangeSmoothness(10)}
+              />
+              <Checkbox
+                label='25'
+                value={smoothness === 25}
+                onChange={() => handleChangeSmoothness(25)}
+              />
+              <Checkbox
+                label='50'
+                value={smoothness === 50}
+                onChange={() => handleChangeSmoothness(50)}
+              />
+              <Checkbox
+                label='100'
+                value={smoothness === 100}
+                onChange={() => handleChangeSmoothness(100)}
+              />
+            </div>
             {/* Ende der Reihen für die Checkboxen*/}
-             
           </div>
         </div>
         <div className='bg-gray-100 mt-20  justify-center px-20 py-4'>
