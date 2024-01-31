@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Papa from 'papaparse';
 import Plot from 'react-plotly.js';
 //TODO: responsive
 
 const CsvPlotter = () => {
+  //Div Ref für den Container der Graphen
+  const divRef = useRef();
+  const [divWidth, setDivWidth] = useState(0);
+
   //Variable, die Angibt, was an y-Achse angezeigt wird
   const [yAxis, setYAxis] = React.useState('Temperature');
   const handleChangeY = (newValue) => {
@@ -388,6 +392,22 @@ const CsvPlotter = () => {
     };
 
     fetchData();
+
+    const getDivWidth = () => {
+      if (divRef.current) {
+        const width = divRef.current.clientWidth;
+        setDivWidth(width);
+        console.log('Breite des DIVs:', width);
+      }
+    };
+
+    getDivWidth();
+
+    window.addEventListener('resize', getDivWidth);
+
+    return () => {
+      window.removeEventListener('resize', getDivWidth);
+    };
   }, []);
 
   //Steiggeschwindigkeit berechnen
@@ -543,9 +563,12 @@ const CsvPlotter = () => {
 
     return result;
   };
+
+  console.log(divWidth);
+
   const plotLayout = {
     title: 'Wetterballon Daten',
-    width: 800,
+    width: divWidth,
     height: 500,
     showlegend: true,
     xaxis: xAxisTitle,
@@ -620,7 +643,7 @@ const CsvPlotter = () => {
         {/* Ende der Box für die Zusammenfassung links*/}
 
         {/* Beginn der Box für die Graphen rechts*/}
-        <div className='justify-start w-full'>
+        <div className='justify-start w-full' ref={divRef}>
           <Plot data={plotData} layout={plotLayout} />
         </div>
         {/* Ende der Box für die Graphen rechts*/}
