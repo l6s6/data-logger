@@ -3,8 +3,10 @@ import React from 'react';
 function Navbar() {
   return (
     <div className='h-16 bg-gray-300 items-center flex px-8 mb-8 justify-between'>
-      <span className='text-2xl font-bold'>Data Logger Evaluation</span>
-      <span className='text-lg'>Leopold</span>
+      <span className='text-2xl font-bold'>
+        Auswertung des Projekts "Wetterballon"
+      </span>
+      <span className='text-lg hidden md:block'>GaK Speyer</span>
     </div>
   );
 }
