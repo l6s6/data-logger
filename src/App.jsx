@@ -56,6 +56,7 @@ const CsvPlotter = () => {
     IO_Out_1_Timestamp: [],
     IO_Out_2_State: [],
     IO_Out_2_Timestamp: [],
+    Baro_Formula: [],
   });
 
   //Liste aller Werte für die zusammenfassende Auswertung
@@ -206,43 +207,6 @@ const CsvPlotter = () => {
           const convertSecondsToMinutes = (seconds) => seconds / 60;
           const Uptime_Min = Uptime.map(convertSecondsToMinutes);
 
-          //Daten in Arrays speichern
-          setCsvData({
-            Uptime,
-            Uptime_Min,
-            GNSS_PPS_Timestamp,
-            GNSS_UTC_date_time,
-            GNSS_Fix_type,
-            GNSS_Latitude,
-            GNSS_Longitude,
-            GNSS_Positional_dilution_of_precision,
-            GNSS_Altitude_above_Mean_Sea_Level,
-            GNSS_Ground_speed,
-            Vertical_Speed,
-            GNSS_Satellites_in_view,
-            GNSS_Altitude_above_ellipsoid,
-            Temperature_Board,
-            Temperature_Ext_LM75,
-            Temperature_Ext_MS8607,
-            Pressure_Ext_MS8607,
-            Humidity_Ext_MS8607,
-            Light_Intensity_UVA_index,
-            Volt_Supply_Voltage,
-            Volt_3_3V_board_voltage,
-            Volt_5V_board_voltage,
-            Volt_Vin1_voltage,
-            Volt_Vin2_voltage,
-            Volt_Vin3_voltage,
-            IO_In_1_State,
-            IO_In_1_Timestamp,
-            IO_In_2_State,
-            IO_In_2_Timestamp,
-            IO_Out_1_State,
-            IO_Out_1_Timestamp,
-            IO_Out_2_State,
-            IO_Out_2_Timestamp,
-          });
-
           //Bereinigte Arrays, die nur Zahlen enthalten
           const V_Temperature_Board = Temperature_Board.filter(
             (value) => typeof value === 'number' && !isNaN(value)
@@ -295,6 +259,57 @@ const CsvPlotter = () => {
                 V_Humidity_Ext_MS8607.length) *
                 100
             ) / 100;
+
+          //Druck bei Start durch Mittlung der ersten Werte
+          const avgStartPressure =
+            Math.round(
+              (Pressure_Ext_MS8607.slice(0, 30).reduce((a, b) => a + b) / 30) *
+                100
+            ) / 100;
+
+          //Erstellung des Arrays mit den Druckdaten druch die Formel
+          const Baro_Formula = calculatePressure(
+            V_GNSS_Altitude_above_Mean_Sea_Level,
+            avgStartPressure,
+            V_Temperature_Ext_MS8607
+          );
+          //Daten der CSV Datei in Arrays speichern
+          setCsvData({
+            Uptime,
+            Uptime_Min,
+            GNSS_PPS_Timestamp,
+            GNSS_UTC_date_time,
+            GNSS_Fix_type,
+            GNSS_Latitude,
+            GNSS_Longitude,
+            GNSS_Positional_dilution_of_precision,
+            GNSS_Altitude_above_Mean_Sea_Level,
+            GNSS_Ground_speed,
+            Vertical_Speed,
+            GNSS_Satellites_in_view,
+            GNSS_Altitude_above_ellipsoid,
+            Temperature_Board,
+            Temperature_Ext_LM75,
+            Temperature_Ext_MS8607,
+            Pressure_Ext_MS8607,
+            Humidity_Ext_MS8607,
+            Light_Intensity_UVA_index,
+            Volt_Supply_Voltage,
+            Volt_3_3V_board_voltage,
+            Volt_5V_board_voltage,
+            Volt_Vin1_voltage,
+            Volt_Vin2_voltage,
+            Volt_Vin3_voltage,
+            IO_In_1_State,
+            IO_In_1_Timestamp,
+            IO_In_2_State,
+            IO_In_2_Timestamp,
+            IO_Out_1_State,
+            IO_Out_1_Timestamp,
+            IO_Out_2_State,
+            IO_Out_2_Timestamp,
+            Baro_Formula,
+          });
 
           //Werte für die Zusammenfassung speichern
           setSummary({
@@ -390,6 +405,26 @@ const CsvPlotter = () => {
     return velocityData;
   };
 
+  const calculatePressure = (heightData, startPressure, tempData) => {
+    const pressureData = [];
+    var avgTemp = 0;
+
+    for (let i = 1; i < heightData.length; i++) {
+      avgTemp =
+        Math.round((tempData.slice(0, i).reduce((a, b) => a + b) / i) * 100) /
+        100;
+      //Barometrische Höhenformel
+      const pressure =
+        (startPressure *
+          100 *
+          Math.exp((-9.81 * heightData[i]) / (287.05 * avgTemp))) /
+        100;
+      if (i < 10) console.log(heightData[i], avgTemp, startPressure);
+      pressureData.push(pressure);
+    }
+    return pressureData;
+  };
+
   //X-Achsen Beschriftung je nach Checkbox
   const xAxisTitle = {
     title: {
@@ -423,7 +458,7 @@ const CsvPlotter = () => {
           : yAxis === 'Height'
           ? 'Höhe [m]'
           : yAxis === 'Voltage'
-          ? 'Volt [V]'
+          ? 'Spannung [V]'
           : yAxis === 'Speed'
           ? 'Geschwindigkeit [km/h]'
           : yAxis === 'Vertical'
@@ -460,7 +495,11 @@ const CsvPlotter = () => {
 
   //Y-Achsen Werte je nach Checkbox für zweiten Graphen (Falls nötig)
   const yAxisValue2 =
-    yAxis === 'Temperature' ? csvData.Temperature_Ext_MS8607 : null;
+    yAxis === 'Temperature'
+      ? csvData.Temperature_Ext_MS8607
+      : yAxis === 'Pressure' && xAxis === 'Height'
+      ? csvData.Baro_Formula
+      : null;
 
   //Labes des ersten Graphen für die Legende
   const graphLabel1 =
@@ -483,7 +522,12 @@ const CsvPlotter = () => {
       : null;
 
   //Labes des zweiten Graphen für die Legende
-  const graphLabel2 = yAxis === 'Temperature' ? 'Außentemperatur [C]' : null;
+  const graphLabel2 =
+    yAxis === 'Temperature'
+      ? 'Außentemperatur [C]'
+      : yAxis === 'Pressure' && xAxis === 'Height'
+      ? 'Barometrische Höhenformel'
+      : null;
 
   const lineConfig = { shape: 'spline', smoothing: 100 };
 
@@ -499,261 +543,251 @@ const CsvPlotter = () => {
 
     return result;
   };
+  const plotLayout = {
+    title: 'Wetterballon Daten',
+    width: 800,
+    height: 500,
+    showlegend: true,
+    xaxis: xAxisTitle,
+    yaxis: yAxisTitle,
+  };
+  const plotData =
+    yAxis === 'Temperature' /*||(yAxis === 'Pressure' && xAxis === 'Height')*/
+      ? [
+          {
+            x: smoothArray(xAxisValue, smoothness),
+            y: smoothArray(yAxisValue1, smoothness),
+            type: 'scatter',
+            mode: 'lines',
+            line: lineConfig,
+            name: graphLabel1,
+          },
+          {
+            x: smoothArray(xAxisValue, smoothness),
+            y: smoothArray(yAxisValue2, smoothness),
+            type: 'scatter',
+            mode: 'lines',
+            line: lineConfig,
+            name: graphLabel2,
+          },
+        ]
+      : [
+          {
+            x: smoothArray(xAxisValue, smoothness),
+            y: smoothArray(yAxisValue1, smoothness),
+            type: 'scatter',
+            mode: 'lines',
+            line: lineConfig,
+            name: graphLabel1,
+          },
+        ];
   //Beginn HTML
   return (
     <div>
-      <div className=''>
-        <div className='flex justify-between px-20'>
-          {/* Beginn der Box für die Zusammenfassung links*/}
-          <div className='bg-gray-100 rounded-2xl mt-20 min-w-[365px] max-w-[365px] min-h-[400px] max-h-[400px] justify-center flex flex-col px-8 py-4'>
-            <p className='text-2xl font-bold mb-4'>Zusammenfassung</p>
+      <div className='flex flex-col xl:flex-row justify-between xl:px-12'>
+        <span className='block md:hidden'>
+          Auf kleinen Geräten am besten im Querformat anschauen
+        </span>
+        {/* Beginn der Box für die Zusammenfassung links*/}
+        <div className='bg-gray-100 rounded-2xl w-full xl:min-w-[390px] xl:max-w-[390px] min-h-[400px] max-h-[400px] justify-center text-center px-8 py-4 xl:mr-16'>
+          <span className='text-2xl font-bold mb-4'>Zusammenfassung</span>
+          <p>Minimale Innentemperatur: {summary.Min_Temperature_Board} [C]</p>
+          <p>Maximale Innentemperatur: {summary.Max_Temperature_Board} [C]</p>
+          <p>
+            Minimale Außentemperatur: {summary.Min_Temperature_Ext_MS8607} [C]
+          </p>
+          <p className='mb-4'>
+            Maximale Außentemperatur: {summary.Max_Temperature_Ext_MS8607} [C]
+          </p>
+          <p>
+            Maximale Höhe (Meeresspiegel):{' '}
+            {summary.Max_GNSS_Altitude_above_Mean_Sea_Level} [m]
+          </p>
+          <p className='mb-4'>
+            Maximale Geschwindigkeit: {summary.Max_GNSS_Ground_speed} [km/h]
+          </p>
+          <p>Maximaler Druck: {summary.Max_Pressure_Ext_MS8607} [hPa]</p>
+          <p className='mb-4'>
+            Minimaler Druck: {summary.Min_Pressure_Ext_MS8607} [hPa]
+          </p>
+          <p>
+            Maximale Luftfeuchtigkeit: {summary.Max_Humidity_Ext_MS8607} [%]
+          </p>
+          <p className='mb-4'>
+            Minimale Luftfeuchtigkeit: {summary.Min_Humidity_Ext_MS8607} [%]
+          </p>
+        </div>
+        {/* Ende der Box für die Zusammenfassung links*/}
+
+        {/* Beginn der Box für die Graphen rechts*/}
+        <div className='justify-start w-full'>
+          <Plot data={plotData} layout={plotLayout} />
+        </div>
+        {/* Ende der Box für die Graphen rechts*/}
+      </div>
+      {/* Beginn der Reihen für die Checkboxen*/}
+      <div className='xl:px-12 px-4'>
+        <div className='mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2'>
+          <span className='font-bold'>y-Achse: </span>
+          <Checkbox
+            label='Temperatur'
+            value={yAxis === 'Temperature'}
+            onChange={() => handleChangeY('Temperature')}
+          />
+          <Checkbox
+            label='Höhe'
+            value={yAxis === 'Height'}
+            onChange={() => handleChangeY('Height')}
+          />
+          <Checkbox
+            label='Geschwindigkeit'
+            value={yAxis === 'Speed'}
+            onChange={() => handleChangeY('Speed')}
+          />
+          <Checkbox
+            label='Steiggeschwindigkeit'
+            value={yAxis === 'Vertical'}
+            onChange={() => handleChangeY('Vertical')}
+          />
+          <Checkbox
+            label='Druck'
+            value={yAxis === 'Pressure'}
+            onChange={() => handleChangeY('Pressure')}
+          />
+          <Checkbox
+            label='Luftfeuchtigkeit'
+            value={yAxis === 'Humidity'}
+            onChange={() => handleChangeY('Humidity')}
+          />
+          <Checkbox
+            label='UV Index'
+            value={yAxis === 'Light'}
+            onChange={() => handleChangeY('Light')}
+          />
+          <Checkbox
+            label='Spannung'
+            value={yAxis === 'Voltage'}
+            onChange={() => handleChangeY('Voltage')}
+          />
+        </div>
+        <div className='mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2'>
+          <span className='font-bold'>x-Achse: </span>
+          <Checkbox
+            label='Zeit'
+            value={xAxis === 'Uptime'}
+            onChange={() => handleChangeX('Uptime')}
+          />
+          <Checkbox
+            label='Höhe'
+            value={xAxis === 'Height'}
+            onChange={() => handleChangeX('Height')}
+          />{' '}
+          <Checkbox
+            label='Druck'
+            value={xAxis === 'Pressure'}
+            onChange={() => handleChangeX('Pressure')}
+          />
+        </div>
+        <div className='mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2'>
+          <span className='font-bold'>Datenglättung: </span>
+          <Checkbox
+            label='1'
+            value={smoothness === 1}
+            onChange={() => handleChangeSmoothness(1)}
+          />
+          <Checkbox
+            label='5'
+            value={smoothness === 5}
+            onChange={() => handleChangeSmoothness(5)}
+          />
+          <Checkbox
+            label='10'
+            value={smoothness === 10}
+            onChange={() => handleChangeSmoothness(10)}
+          />
+          <Checkbox
+            label='25'
+            value={smoothness === 25}
+            onChange={() => handleChangeSmoothness(25)}
+          />
+          <Checkbox
+            label='50'
+            value={smoothness === 50}
+            onChange={() => handleChangeSmoothness(50)}
+          />
+          <Checkbox
+            label='100'
+            value={smoothness === 100}
+            onChange={() => handleChangeSmoothness(100)}
+          />
+        </div>
+      </div>
+      {/* Ende der Reihen für die Checkboxen*/}
+      <div className='bg-gray-100 mt-20  justify-center xl:px-20 px-4 py-4'>
+        <p className='text-2xl font-bold mb-4'>Fortgeschrittene Analyse</p>
+        <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4'>
+          <div>
             <p>Minimale Innentemperatur: {summary.Min_Temperature_Board} [C]</p>
             <p>Maximale Innentemperatur: {summary.Max_Temperature_Board} [C]</p>
             <p>
+              Durchschnittliche Innentemperatur: {summary.Avg_Temperature_Board}{' '}
+              [C]
+            </p>
+            <p className='mb-12'>
+              Standardabweichung Innentemperatur: {summary.SD_Temperature_Board}{' '}
+              [C]
+            </p>
+          </div>
+          <div>
+            <p>
               Minimale Außentemperatur: {summary.Min_Temperature_Ext_MS8607} [C]
             </p>
-            <p className='mb-4'>
+            <p>
               Maximale Außentemperatur: {summary.Max_Temperature_Ext_MS8607} [C]
             </p>
             <p>
-              Maximale Höhe (Meeresspiegel):{' '}
-              {summary.Max_GNSS_Altitude_above_Mean_Sea_Level} [m]
+              Durchschnittliche Außentemperatur:{' '}
+              {summary.Avg_Temperature_Ext_MS8607} [C]
             </p>
-            <p className='mb-4'>
-              Maximale Geschwindigkeit: {summary.Max_GNSS_Ground_speed} [km/h]
+            <p className='mb-12'>
+              Standardabweichung Außentemperatur:{' '}
+              {summary.SD_Temperature_Ext_MS8607} [C]
             </p>
+          </div>
+          <div>
             <p>Maximaler Druck: {summary.Max_Pressure_Ext_MS8607} [hPa]</p>
-            <p className='mb-4'>
-              Minimaler Druck: {summary.Min_Pressure_Ext_MS8607} [hPa]
+            <p>Minimaler Druck: {summary.Min_Pressure_Ext_MS8607} [hPa]</p>
+            <p>
+              Durchschnittlicher Druck: {summary.Avg_Pressure_Ext_MS8607} [hPa]
             </p>
+            <p className='mb-12'>
+              Standardabweichung Druck: {summary.SD_Pressure_Ext_MS8607} [hPa]
+            </p>
+          </div>
+          <div>
             <p>
               Maximale Luftfeuchtigkeit: {summary.Max_Humidity_Ext_MS8607} [%]
             </p>
-            <p className='mb-4'>
+            <p>
               Minimale Luftfeuchtigkeit: {summary.Min_Humidity_Ext_MS8607} [%]
             </p>
-          </div>
-          {/* Ende der Box für die Zusammenfassung links*/}
-
-          {/* Beginn der Box für die Graphen rechts*/}
-          <div className='flex flex-col justify-start'>
-            <Plot
-              data={
-                yAxis === 'Temperature'
-                  ? [
-                      {
-                        x: smoothArray(xAxisValue, smoothness),
-                        y: smoothArray(yAxisValue1, smoothness),
-                        type: 'scatter',
-                        mode: 'lines',
-                        line: lineConfig,
-                        name: graphLabel1,
-                        showlegend: true,
-                      },
-                      {
-                        x: smoothArray(xAxisValue, smoothness),
-                        y: smoothArray(yAxisValue2, smoothness),
-                        type: 'scatter',
-                        mode: 'lines',
-                        line: lineConfig,
-                        name: graphLabel2,
-                        showlegend: true,
-                      },
-                    ]
-                  : [
-                      {
-                        x: smoothArray(xAxisValue, smoothness),
-                        y: smoothArray(yAxisValue1, smoothness),
-                        type: 'scatter',
-                        mode: 'lines',
-                        line: lineConfig,
-                        name: graphLabel1,
-                        showlegend: true,
-                      },
-                    ]
-              }
-              layout={{
-                width: 1000,
-                height: 500,
-                title: 'Wetterballon Daten',
-                xaxis: xAxisTitle,
-                yaxis: yAxisTitle,
-              }}
-            />
-            {/* Ende der Box für die Graphen rechts*/}
-          </div>
-        </div>
-        {/* Beginn der Reihen für die Checkboxen*/}
-        <div className='px-20'>
-          <div className='flex gap-4'>
-            <span>y-Achse: </span>
-            <Checkbox
-              label='Temperatur'
-              value={yAxis === 'Temperature'}
-              onChange={() => handleChangeY('Temperature')}
-            />
-            <Checkbox
-              label='Höhe'
-              value={yAxis === 'Height'}
-              onChange={() => handleChangeY('Height')}
-            />
-            <Checkbox
-              label='Geschwindigkeit'
-              value={yAxis === 'Speed'}
-              onChange={() => handleChangeY('Speed')}
-            />
-            <Checkbox
-              label='Steiggeschwindigkeit'
-              value={yAxis === 'Vertical'}
-              onChange={() => handleChangeY('Vertical')}
-            />
-            <Checkbox
-              label='Druck'
-              value={yAxis === 'Pressure'}
-              onChange={() => handleChangeY('Pressure')}
-            />
-            <Checkbox
-              label='Luftfeuchtigkeit'
-              value={yAxis === 'Humidity'}
-              onChange={() => handleChangeY('Humidity')}
-            />
-            <Checkbox
-              label='UV Index'
-              value={yAxis === 'Light'}
-              onChange={() => handleChangeY('Light')}
-            />
-            <Checkbox
-              label='Spannung'
-              value={yAxis === 'Voltage'}
-              onChange={() => handleChangeY('Voltage')}
-            />
-          </div>
-          <div className='flex gap-4'>
-            <span>x-Achse: </span>
-            <Checkbox
-              label='Zeit'
-              value={xAxis === 'Uptime'}
-              onChange={() => handleChangeX('Uptime')}
-            />
-            <Checkbox
-              label='Höhe'
-              value={xAxis === 'Height'}
-              onChange={() => handleChangeX('Height')}
-            />{' '}
-            <Checkbox
-              label='Druck'
-              value={xAxis === 'Pressure'}
-              onChange={() => handleChangeX('Pressure')}
-            />
-          </div>
-          <div className='flex gap-4'>
-            <span>Datenglättung: </span>
-            <Checkbox
-              label='1'
-              value={smoothness === 1}
-              onChange={() => handleChangeSmoothness(1)}
-            />
-            <Checkbox
-              label='5'
-              value={smoothness === 5}
-              onChange={() => handleChangeSmoothness(5)}
-            />
-            <Checkbox
-              label='10'
-              value={smoothness === 10}
-              onChange={() => handleChangeSmoothness(10)}
-            />
-            <Checkbox
-              label='25'
-              value={smoothness === 25}
-              onChange={() => handleChangeSmoothness(25)}
-            />
-            <Checkbox
-              label='50'
-              value={smoothness === 50}
-              onChange={() => handleChangeSmoothness(50)}
-            />
-            <Checkbox
-              label='100'
-              value={smoothness === 100}
-              onChange={() => handleChangeSmoothness(100)}
-            />
-          </div>
-        </div>
-        {/* Ende der Reihen für die Checkboxen*/}
-        <div className='bg-gray-100 mt-20  justify-center px-20 py-4'>
-          <p className='text-2xl font-bold mb-4'>Fortgeschrittene Analyse</p>
-          <div className='grid grid-cols-4'>
-            <div>
-              <p>
-                Minimale Innentemperatur: {summary.Min_Temperature_Board} [C]
-              </p>
-              <p>
-                Maximale Innentemperatur: {summary.Max_Temperature_Board} [C]
-              </p>
-              <p>
-                Durchschnittliche Innentemperatur:{' '}
-                {summary.Avg_Temperature_Board} [C]
-              </p>
-              <p className='mb-12'>
-                Standardabweichung Innentemperatur:{' '}
-                {summary.SD_Temperature_Board} [C]
-              </p>
-            </div>
-            <div>
-              <p>
-                Minimale Außentemperatur: {summary.Min_Temperature_Ext_MS8607}{' '}
-                [C]
-              </p>
-              <p>
-                Maximale Außentemperatur: {summary.Max_Temperature_Ext_MS8607}{' '}
-                [C]
-              </p>
-              <p>
-                Durchschnittliche Außentemperatur:{' '}
-                {summary.Avg_Temperature_Ext_MS8607} [C]
-              </p>
-              <p className='mb-12'>
-                Standardabweichung Außentemperatur:{' '}
-                {summary.SD_Temperature_Ext_MS8607} [C]
-              </p>
-            </div>
-            <div>
-              <p>Maximaler Druck: {summary.Max_Pressure_Ext_MS8607} [hPa]</p>
-              <p>Minimaler Druck: {summary.Min_Pressure_Ext_MS8607} [hPa]</p>
-              <p>
-                Durchschnittlicher Druck: {summary.Avg_Pressure_Ext_MS8607}{' '}
-                [hPa]
-              </p>
-              <p className='mb-12'>
-                Standardabweichung Druck: {summary.SD_Pressure_Ext_MS8607} [hPa]
-              </p>
-            </div>
-            <div>
-              <p>
-                Maximale Luftfeuchtigkeit: {summary.Max_Humidity_Ext_MS8607} [%]
-              </p>
-              <p>
-                Minimale Luftfeuchtigkeit: {summary.Min_Humidity_Ext_MS8607} [%]
-              </p>
-              <p>
-                Durchschnittliche Luftfeuchtigkeit:{' '}
-                {summary.Avg_Humidity_Ext_MS8607} [%]
-              </p>
-              <p className='mb-12'>
-                Standardabweichung Luftfeuchtigkeit:{' '}
-                {summary.SD_Humidity_Ext_MS8607} [%]
-              </p>
-            </div>
             <p>
-              Maximale Höhe (Meeresspiegel):{' '}
-              {summary.Max_GNSS_Altitude_above_Mean_Sea_Level} [m]
+              Durchschnittliche Luftfeuchtigkeit:{' '}
+              {summary.Avg_Humidity_Ext_MS8607} [%]
             </p>
-            <p>
-              Maximale Geschwindigkeit: {summary.Max_GNSS_Ground_speed} [km/h]
+            <p className='mb-12'>
+              Standardabweichung Luftfeuchtigkeit:{' '}
+              {summary.SD_Humidity_Ext_MS8607} [%]
             </p>
-            <p>Maximaler UV Index: {summary.Max_Light_Intensity_UVA_index}</p>
           </div>
+          <p>
+            Maximale Höhe (Meeresspiegel):{' '}
+            {summary.Max_GNSS_Altitude_above_Mean_Sea_Level} [m]
+          </p>
+          <p>
+            Maximale Geschwindigkeit: {summary.Max_GNSS_Ground_speed} [km/h]
+          </p>
+          <p>Maximaler UV Index: {summary.Max_Light_Intensity_UVA_index}</p>
         </div>
       </div>
     </div>
